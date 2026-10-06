@@ -1,151 +1,120 @@
-# PS5-StickS3 — WebKit Autoloader + Display + Payload Repository
+# PS5-StickS3 — WebKit Autoloader para M5Stack StickS3
 
-Firmware adaptado do [owendswang/ps5-webkit-autoloader-esp32](https://github.com/owendswang/ps5-webkit-autoloader-esp32) para **M5Stack StickS3 (ESP32-S3, 8 MB flash)** com tela ST7789, botão físico e todos os exploits/payloads embutidos.
+Adaptação do [owendswang/ps5-webkit-autoloader-esp32](https://github.com/owendswang/ps5-webkit-autoloader-esp32) para o **M5Stack StickS3 (ESP32-S3, 8 MB flash)** com tela ST7789 e repositório de payloads.
 
 ## 📋 Firmwares Suportados
 
-| Firmware | Exploit | Incluso |
+| Faixa | Exploit | Incluso |
 |---|---|---|
-| **7.00 — 13.60** 🆕 | Relapse ✅ | Rápido (segundos) |
-| **12.00 — 12.70** | P2JB ✅ | Lento (3h, incluso no slopkit) |
-| **9.00 — 12.00** | Poopsploit ✅ | Rápido |
-| **1.00 — 5.50** | umtx2 ✅ | Suporte limitado |
+| **7.00 — 13.60** | Relapse 🆕 | ✅ |
+| **12.00 — 12.70** | P2JB | ✅ (via slopkit, ~3h) |
+| **7.00 — 12.00** | Poopsploit | ✅ (via slopkit) |
+| **1.00 — 5.50** | umtx2 | ✅ |
 
-O autoloader detecta automaticamente a firmware e usa o exploit correto. Você também escolhe manualmente na interface.
+O autoloader detecta a firmware automaticamente ou permite escolha manual.
 
-## 🛠️ O que você precisa
+## 🛠️ Build
 
-### Hardware
-| Item | Especificação |
-|---|---|
-| **M5Stack StickS3** | ESP32-S3, 8 MB flash, tela ST7789 (135x240) |
-| **Cabo USB-C** | Para conectar ao PS5 ou PC |
-| **PS5** | Firmware 7.00–13.60 |
-
-### Software
 ```bash
-# 1. Ambiente
-sudo apt install curl git python3 openssl jq
-# Arduino CLI: https://arduino.cc/en/software
-# Arduino ESP32 core 2.0.11
-
-# 2. Clone
-git clone --recursive https://github.com/seu-usuario/ps5-sticks3
+# 1. Clone
+git clone https://github.com/Matrix-Bebeto/ps5-sticks3
 cd ps5-sticks3
 
-# 3. Configure
+# 2. Baixe os payloads essenciais
+bash download-payloads.sh essencial
+
+# 3. Configure o ambiente (Arduino CLI, dependencias)
 bash setup-environment.sh
 
 # 4. Compile
-cd firmware && make sticks3
+cd firmware
 
-# 5. Grave no StickS3
-# Via USB-C usando ESP32 Flash Tool ou esptool.py:
-python3 esptool.py --chip esp32s3 write_flash 0x0 build/s3/esp32-arduino.s3.merged.bin
+# Para ESP32-PICO (4MB):
+make pico
+
+# Para ESP32-S2:
+make s2
+
+# Para ESP32-S3 (StickS3, 4MB - funcional basico):
+make s3
+
+# Para StickS3 8MB com tela (em desenvolvimento):
+# make sticks3
 ```
 
-## 📺 O que aparece na tela
+### Grave no StickS3
 
-```
-┌──────────────────────────────┐
-│  🔵 PS5 AUTOLOADER v0.5.2   │
-│                              │
-│  📡 ESP32_PORTAL             │
-│  🔑 12345678                 │
-│  🌐 192.168.4.1              │
-│  👥 0 Conectados             │
-│                              │
-│  Aperte botao p/ navegar     │
-│  pelos payloads              │
-└──────────────────────────────┘
-```
-
-### Navegação
-| Ação | Função |
-|---|---|
-| 1 clique | Alterna entre telas / payloads |
-| 2 cliques | Envia payload selecionado |
-| Segurar | Reset / Info |
-
-## 📦 Payloads Inclusos
-
-| Payload | Versão | Tamanho | Essencial? |
-|---|---|---|---|
-| **etaHEN** 2.5B | Homebrew Enabler | 4.6 MB | ✅ |
-| **kstuff-lite** v1.11 | Kernel patch leve | 1.7 MB | ✅ |
-| **elfldr** v0.26 | Carregador ELF | 385 KB | ✅ |
-| **nanoDNS** 0.4 | DNS proxy | 129 KB | ✅ |
-| **ftpsrv** v0.21.1 | Servidor FTP | 187 KB | |
-| **pldmgr** v0.5.2 | Payload Manager | 2.4 MB | |
-| **ShadowMountPlus** 1.7β3 | Auto-mounter FPKG | 2.4 MB | |
-| **CheatRunner** v0.17.2 | Trainers | 9.8 MB | |
-| **ps5debug-NG** 1.3.2 | Debug settings | 4.0 MB | |
-| **websrv** v0.34 | Web server | 1.6 MB | |
-
-**Espaço total LittleFS:** ~6,5 MB → Selecione os que cabem.
-
-### Baixar payloads
 ```bash
-# Essenciais (recomendado): etaHEN + kstuff + elfldr + nanoDNS + ftpsrv
-./download-payloads.sh essencial
+# Via esptool.py (USB-C)
+esptool.py --chip esp32s3 write_flash 0x0 build/s3/esp32-arduino.s3.merged.bin
 
-# Completo (pode nao caber todo)
-./download-payloads.sh completo
+# Ou via ESP32 Flash Tool (web):
+# https://esp.huhn.me
 ```
+
+## 📦 Payloads
+
+Execute `bash download-payloads.sh essencial` para baixar:
+
+| Payload | Versão |
+|---|---|
+| **etaHEN** 2.5B | Homebrew Enabler |
+| **kstuff-lite** v1.11 | Kernel patch |
+| **elfldr** v0.26 | Carregador ELF |
+| **nanoDNS** 0.4 | DNS proxy |
+| **ftpsrv** v0.21.1 | Servidor FTP |
+
+Disponíveis (adicione manualmente se couber): ShadowMount, pldmgr, CheatRunner, ps5debug, websrv, ps5upload, web-file-manager, ps5-linux-loader, onionHEN.
+
+> ℹ️ O LittleFS tem ~6,5 MB livres nos 8 MB totais. O etaHEN (4,6 MB) + kstuff-lite (1,7 MB) + elfldr (0,4 MB) ocupam ~6,7 MB — use o script `download-payloads.sh` para selecionar a combinação ideal.
 
 ## 🚀 Uso
 
-1. **Pluga** o StickS3 no PS5 (qualquer porta USB)
-2. **Liga** o PS5
-3. StickS3 liga sozinho (5V pela USB) e cria o WiFi `ESP32_PORTAL`
-4. No PS5: **Settings → Network → Settings → Set Up Internet Connection → Use Wi-Fi**
-5. Conecta no `ESP32_PORTAL` (senha `12345678`)
-6. **Settings → Guide & Tips → User's Guide**
-7. O exploit carrega e instala o atalho na **Mídia**
-8. Depois disso o **StickS3 não é mais necessário** — o atalho fica no PS5
+1. Pluge o StickS3 no PS5
+2. Conecte o PS5 ao WiFi `ESP32_PORTAL` (senha `12345678`)
+3. No PS5: **Settings → Guide & Tips → User's Guide**
+4. O exploit carrega o autoloader e instala o atalho na **Mídia**
+5. Após a primeira instalação, o StickS3 não é mais necessário
 
-## 📡 Cloudflare Tunnel (opcional)
+## 📺 Display ST7789 (135x240) — Em desenvolvimento
 
-Use o StickS3 como servidor de payloads externo via Cloudflare Tunnel:
+O código para a tela está em `firmware/display_sticks3.ino`. Para ativar:
 
-```yaml
-# No cloudflared config
-ingress:
-  - hostname: ps5.matrixwifi.com.br
-    service: http://127.0.0.1:4000
+```c
+// Compile com as flags:
+// -DDISPLAY_ENABLE=1 -DDISPLAY_STICKS3=1
 ```
 
-## 🏗️ Estrutura do Projeto
+**Funcionalidades planejadas:**
+- Status do WiFi e conexões
+- Lista de payloads navegável pelo botão físico
+- Indicador de progresso do exploit
+- QR code do WiFi
+
+## 🏗️ Estrutura
 
 ```
 ps5-sticks3/
-├── firmware/              ← Código base (submodule do repo original)
-├── patches/               ← Patches para o firmware
-├── scripts/               ← Scripts auxiliares
-├── download-payloads.sh   ← Baixa payloads ELF
-├── setup-environment.sh   ← Prepara ambiente de build
+├── firmware/                ← Código base (owendswang)
+│   ├── esp32-arduino.ino    ← Firmware principal
+│   ├── display_sticks3.ino  ← Código da tela ST7789
+│   ├── Makefile             ← Build system
+│   ├── partitions-8m.csv    ← Particionamento 8 MB
+│   └── autoloader/          ← Web assets + exploits
+│       └── app/0.5.2/payloads/  ← Payloads ELF aqui
+├── scripts/
+│   └── configure-sticks3.sh ← Script de config
+├── download-payloads.sh     ← Baixa payloads do mirror
+├── setup-environment.sh     ← Prepara ambiente
 └── README.md
-```
-
-## 🧠 Como funciona
-
-```
-StickS3 ──📡── WiFi AP ──📶── PS5
-  │                            │
-  ├── HTTPS server (443)       ├── User's Guide → carrega exploit
-  ├── HTTP server (80)         ├── Payload Manager → lista ELFs
-  ├── DNS server (53)          └── Conexão automática
-  ├── ST7789 Display (135×240)
-  └── Botão físico (navegação)
 ```
 
 ## ⚠️ Aviso
 
-Use por sua conta e risco. Mantenha o PS5 offline após o jailbreak e nunca atualize a firmware.
+Use por sua conta e risco. Mantenha o PS5 offline após o jailbreak e não atualize a firmware.
 
 ## 📜 Licenças
 
 - Firmware base: MIT (owendswang/ps5-webkit-autoloader-esp32)
-- Exploits: Licenças originais de cada projeto (Relapse, slopkit, umtx2)
+- Exploits: licenças originais de cada projeto
 - Código deste repositório: MIT
-- Payloads: licenças dos respectivos autores
