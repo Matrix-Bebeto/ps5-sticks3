@@ -1,0 +1,14 @@
+/build
+/data
+/*.crt
+/*.key
+/server_certs.h
+__pycache__/
+*.pyc
+*.bin
+*.elf
+*.bak
+/slopkit.*
+/autoloader-*
+/*.mini/
+/henloader/
