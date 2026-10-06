@@ -1,0 +1,12 @@
+*.bin
+*.merged
+build/
+data/
+autoloader.mini/
+.DS_Store
+*.o
+server.key
+server.crt
+server_certs.h
+firmware/.git
+.gitmodulesfirmware/
