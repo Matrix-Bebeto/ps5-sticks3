@@ -10,3 +10,4 @@ server.crt
 server_certs.h
 firmware/.git
 .gitmodulesfirmware/
+firmware/
