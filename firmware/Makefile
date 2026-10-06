@@ -25,6 +25,8 @@ ESP8266_SKETCH_DIR := $(ESP8266_BUILD_DIR)/sketch/esp8266-arduino
 PICO_SKETCH_DIR := $(PICO_BUILD_DIR)/sketch/$(PROJECT_NAME)
 S2_SKETCH_DIR := $(S2_BUILD_DIR)/sketch/$(PROJECT_NAME)
 S3_SKETCH_DIR := $(S3_BUILD_DIR)/sketch/$(PROJECT_NAME)
+STICKS3_BUILD_DIR := $(BUILD_DIR)/sticks3
+STICKS3_SKETCH_DIR := $(STICKS3_BUILD_DIR)/sketch/$(PROJECT_NAME)
 C3_SKETCH_DIR := $(C3_BUILD_DIR)/sketch/$(PROJECT_NAME)
 PICO_8M_BUILD_DIR := $(BUILD_DIR)/pico-8m
 PICO_8M_SKETCH_DIR := $(PICO_8M_BUILD_DIR)/sketch/$(PROJECT_NAME)
@@ -68,6 +70,7 @@ endif
 PICO_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 S2_FQBN := esp32:esp32:esp32s2:$(S2_USB_OPTIONS),MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 S3_FQBN := esp32:esp32:esp32s3:$(S3_USB_OPTIONS),MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
+STICKS3_FQBN := esp32:esp32:esp32s3:$(S3_USB_OPTIONS),MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=dio,FlashSize=8M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 PICO_8M_FQBN := esp32:esp32:esp32:CPUFreq=240,FlashFreq=40,FlashMode=dio,FlashSize=8M,DebugLevel=$(DEBUG_LEVEL),PSRAM=disabled
 C3_FQBN := esp32:esp32:esp32c3:$(C3_USB_OPTIONS),CPUFreq=160,FlashFreq=40,FlashMode=dio,FlashSize=4M,DebugLevel=$(DEBUG_LEVEL)
 ESP8266_FQBN := esp8266:esp8266:generic:eesz=4M3M,FlashMode=dout,FlashFreq=40,xtal=80,CrystalFreq=26,baud=921600,ssl=all,mmu=3232,non32xfer=fast,vt=flash,exception=disabled,stacksmash=disabled,ip=lm2f,sdk=nonosdk_190703,lvl=None____,dbg=Disabled,wipe=none,led=2
@@ -94,6 +97,11 @@ S3_APP := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.bin
 S3_BOOTLOADER := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
 S3_PARTITIONS := $(S3_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
 S3_MERGED := $(S3_BUILD_DIR)/$(PROJECT_NAME).s3.merged.bin
+STICKS3_MERGED := $(STICKS3_BUILD_DIR)/$(PROJECT_NAME).sticks3.merged.bin
+STICKS3_APP := $(STICKS3_BUILD_DIR)/$(PROJECT_NAME).ino.bin
+STICKS3_BOOTLOADER := $(STICKS3_BUILD_DIR)/$(PROJECT_NAME).ino.bootloader.bin
+STICKS3_PARTITIONS := $(STICKS3_BUILD_DIR)/$(PROJECT_NAME).ino.partitions.bin
+STICKS3_LITTLEFS_IMAGE := $(STICKS3_BUILD_DIR)/$(PROJECT_NAME).littlefs.bin
 PICO_8M_LITTLEFS_IMAGE := $(PICO_8M_BUILD_DIR)/$(PROJECT_NAME).littlefs.bin
 PICO_8M_APP := $(PICO_8M_OUTPUT_DIR)/$(PROJECT_NAME).ino.bin
 PICO_8M_BOOTLOADER := $(PICO_8M_OUTPUT_DIR)/$(PROJECT_NAME).ino.bootloader.bin
@@ -110,7 +118,7 @@ ESP8266_FLASH_SIZE := 4194304
 ESP8266_LITTLEFS_SIZE := 0x2FA000
 ESP8266_LITTLEFS_OFFSET := 0x100000
 
-.PHONY: all debug debug-s2 pico pico-8m s2 s3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
+.PHONY: all debug debug-s2 pico pico-8m s2 s3 sticks3 c3 8266 littlefs datadir minimize check check-minimize check-data check-littlefs check-8266 clean FORCE
 
 all: check $(PICO_MERGED) $(S2_MERGED) $(S3_MERGED) $(C3_MERGED)
 	@echo
@@ -134,6 +142,11 @@ s2: check $(S2_MERGED)
 
 s3: check $(S3_MERGED)
 	@ls -lh "$(S3_MERGED)"
+
+sticks3: STICKS3_BUILD_DIR := $(BUILD_DIR)/sticks3
+sticks3: STICKS3_SKETCH_DIR := $(STICKS3_BUILD_DIR)/sketch/$(PROJECT_NAME)
+sticks3: check $(STICKS3_MERGED)
+	@ls -lh "$(STICKS3_MERGED)" "$(STICKS3_LITTLEFS_IMAGE)"
 
 c3: check $(C3_MERGED)
 	@ls -lh "$(C3_MERGED)"
@@ -373,6 +386,56 @@ $(S2_MERGED): $(S2_APP) $(LITTLEFS_IMAGE)
 	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(S2_MERGED)"
 	fi
 	test "$$(stat -c %s "$(S2_MERGED)")" -eq "$(FLASH_SIZE)"
+
+$(STICKS3_APP): $(PROJECT_DIR)/$(PROJECT_NAME).ino $(SERVER_HEADER) $(PROJECT_DIR)/partitions-8m.csv Makefile $(DNS_LIBRARY_STAMP)
+	@rm -rf "$(STICKS3_SKETCH_DIR)"
+	mkdir -p "$(STICKS3_SKETCH_DIR)"
+	cp "$(PROJECT_DIR)/$(PROJECT_NAME).ino" "$(SERVER_HEADER)" "$(STICKS3_SKETCH_DIR)/"
+	# Copia os arquivos do display
+	cp "$(PROJECT_DIR)/display_sticks3.h" "$(PROJECT_DIR)/display_sticks3.ino" "$(STICKS3_SKETCH_DIR)/" 2>/dev/null || true
+	cp "$(PROJECT_DIR)/partitions-8m.csv" "$(STICKS3_SKETCH_DIR)/partitions.csv"
+	$(ARDUINO_CLI) compile \
+	    --library TFT_eSPI \
+	    $(DNS_LIBRARY_ARG) \
+	    --fqbn "$(STICKS3_FQBN)" \
+	    --build-property "compiler.cpp.extra_flags=-DDISPLAY_ENABLE=1 -DDISPLAY_STICKS3=1 $(USB_DEBUG_FLAG)" \
+	    --output-dir "$(STICKS3_BUILD_DIR)" \
+	    --build-property "build.partitions=partitions" \
+	    --build-property "build.filesystem=littlefs" \
+	    "$(STICKS3_SKETCH_DIR)"
+	size=$$(stat -c %s "$(STICKS3_APP)" 2>/dev/null || echo 0)
+	if [ "$$size" -gt 0 ]; then \
+	    test "$$size" -le 1572864 || { echo "Error: StickS3 app exceeds partition: $$size bytes" >&2; exit 1; } \
+	fi
+
+STICKS3_LITTLEFS_IMAGE:
+	@mkdir -p "$(STICKS3_BUILD_DIR)"
+	"$(LITTLEFS_TOOL)" \
+	    -c "$(DATA_DIR)" \
+	    -p 256 \
+	    -b 4096 \
+	    -s 0x660000 \
+	    "$(STICKS3_LITTLEFS_IMAGE)"
+
+$(STICKS3_MERGED): $(STICKS3_APP) $(STICKS3_LITTLEFS_IMAGE)
+	@python3 "$(ESPTOOL)" \
+	    --chip esp32s3 \
+	    merge_bin \
+	    -o "$(STICKS3_MERGED)" \
+	    --flash_mode dio \
+	    --flash_freq 80m \
+	    --flash_size 8MB \
+	    0x0 "$(STICKS3_BOOTLOADER)" \
+	    0x8000 "$(STICKS3_PARTITIONS)" \
+	    0x10000 "$(STICKS3_APP)" \
+	    "0x190000" "$(STICKS3_LITTLEFS_IMAGE)"
+	size=$$(stat -c %s "$(STICKS3_MERGED)")
+	test "$$size" -le 8388608 || { echo "Error: StickS3 image exceeds 8 MB" >&2; exit 1; }
+	if [ "$$size" -lt 8388608 ]; then \
+	    padding=$$((8388608 - size)); \
+	    head -c "$$padding" /dev/zero | tr '\000' '\377' >> "$(STICKS3_MERGED)"; \
+	fi
+	test "$$(stat -c %s "$(STICKS3_MERGED)")" -eq 8388608
 
 $(S3_MERGED): $(S3_APP) $(LITTLEFS_IMAGE)
 	@python3 "$(ESPTOOL)" \

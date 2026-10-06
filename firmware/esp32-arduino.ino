@@ -35,6 +35,11 @@ static const uint32_t LED_ACTIVITY_MS = 50;
 static uint32_t ledOffUntil = 0;
 #endif
 
+// ── Display (M5Stack StickS3 ST7789) ─────────────────────────
+#ifdef DISPLAY_ENABLE
+#include "display_sticks3.h"
+#endif
+
 #if USB_DEBUG
 // IDF errors normally go to UART0, which is not the S2 USB CDC debug port.
 static int tlsDebugVprintf(const char *format, va_list args)
@@ -989,12 +994,27 @@ void setup()
     setupHttpsServer();
 
     Serial.println("READY");
+
+#ifdef DISPLAY_ENABLE
+    initDisplay();
+    drawBootScreen();
+    delay(1500);
+    drawWifiScreen();
+#endif
 }
 
 void loop()
 {
     dnsServer.processNextRequest();
     webServer.handleClient();
+
+#ifdef DISPLAY_ENABLE
+    if (WiFi.softAPgetConnectedClients() > 0) {
+        totalConnections = WiFi.softAPgetConnectedClients();
+    }
+    handleButton();
+#endif
+
 #ifdef LED_PIN
     ledUpdate();
 #endif
